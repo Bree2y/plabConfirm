@@ -1,0 +1,272 @@
+"use client";
+
+import { FormEvent, useMemo, useState } from "react";
+
+type Apply = {
+  id: number;
+  depositor?: string | null;
+  user?: number;
+  user_id?: number;
+  status?: string;
+  level?: number | null;
+  is_newbie?: boolean;
+  apply_type?: string;
+  created_at?: string;
+  profile_level?: {
+    tier_ko?: string;
+    tier?: string;
+    grade?: number | null;
+  } | null;
+  playstyle?: {
+    style?: string;
+    strength?: string;
+  } | null;
+};
+
+type Match = {
+  id: number;
+  label_title?: string | null;
+  label_stadium?: string | null;
+  label_stadium2?: string | null;
+  schedule?: string | null;
+  player_cnt?: number;
+  confirm_cnt?: number;
+  total_apply_cnt?: number;
+  max_player_cnt?: number;
+  min_player_cnt?: number;
+  fee?: number;
+  playtime?: number;
+  type?: string;
+  apply_status?: string;
+  applys?: Apply[];
+  parking_fee?: string | null;
+  is_parking_free?: boolean;
+  is_shower?: boolean;
+  is_wear?: boolean;
+  is_shoes?: boolean;
+};
+
+type ApiResult = { match: Match; sourceUrl: string; applys: Apply[] };
+
+const demoUrl = "https://abr.ge/vjss2z";
+
+const statusLabels: Record<string, string> = {
+  CONFIRM: "확정",
+  CANCEL: "취소",
+  WAIT: "대기",
+  WAITING: "대기",
+};
+
+const styleLabels: Record<string, string> = {
+  BALANCE: "밸런스",
+  ATTACK: "공격형",
+  DEFENSE: "수비형",
+  PASS: "패스",
+  SHOOT: "슈팅",
+  DRIBBLE: "드리블",
+};
+
+function formatSchedule(value?: string | null) {
+  if (!value) return "일정 정보 없음";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Seoul",
+  }).format(date);
+}
+
+function formatMoney(value?: number) {
+  return typeof value === "number" ? `${value.toLocaleString("ko-KR")}원` : "-";
+}
+
+function displayName(apply: Apply, index: number) {
+  const name = apply.depositor?.trim();
+  if (name && !name.includes("?") && !name.includes("�")) return name;
+  return `참여자 ${String(index + 1).padStart(2, "0")}`;
+}
+
+function translate(value?: string | null) {
+  if (!value) return "-";
+  return styleLabels[value] ?? value.toLowerCase().replaceAll("_", " ");
+}
+
+export default function Home() {
+  const [url, setUrl] = useState("");
+  const [result, setResult] = useState<ApiResult | null>(null);
+  const [filter, setFilter] = useState("ALL");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!url.trim()) {
+      setError("PLAB 매치 링크를 입력해주세요.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setResult(null);
+    try {
+      const response = await fetch(`/api/match?url=${encodeURIComponent(url.trim())}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "매치 정보를 불러오지 못했습니다.");
+      setResult(data);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const match = result?.match;
+  const applications = result?.applys ?? [];
+  const filteredApplications = useMemo(
+    () => (filter === "ALL" ? applications : applications.filter((apply) => apply.status === filter)),
+    [applications, filter],
+  );
+  const confirmed = applications.filter((apply) => apply.status === "CONFIRM").length;
+  const cancelled = applications.filter((apply) => apply.status === "CANCEL").length;
+  const maxPlayers = match?.max_player_cnt ?? 0;
+  const fillPercent = maxPlayers ? Math.min(100, (confirmed / maxPlayers) * 100) : 0;
+
+  return (
+    <main className="shell">
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
+      <nav className="topbar">
+        <a className="brand" href="/" aria-label="PLAB 인원 확인 홈">
+          <span className="brand-mark">P</span>
+          <span>PLAB CHECK</span>
+        </a>
+        <span className="topbar-note"><i /> LIVE MATCH VIEWER</span>
+      </nav>
+
+      <section className="hero">
+        <p className="eyebrow">MATCH INTELLIGENCE / 01</p>
+        <h1>신청자 현황을<br /><em>한눈에</em> 확인하세요.</h1>
+        <p className="hero-copy">PLAB 매치 링크 하나면 경기 정보와 신청자 명단을 깔끔하게 정리해드립니다.</p>
+
+        <form className="lookup" onSubmit={handleSubmit}>
+          <div className="input-wrap">
+            <span className="link-icon">↗</span>
+            <label className="sr-only" htmlFor="match-link">PLAB 매치 링크</label>
+            <input
+              id="match-link"
+              type="url"
+              placeholder="https://abr.ge/vjss2z"
+              value={url}
+              onChange={(event) => setUrl(event.target.value)}
+              autoComplete="url"
+            />
+          </div>
+          <button type="submit" disabled={loading}>
+            {loading ? <span className="spinner" /> : "현황 보기"}
+            {!loading && <span>→</span>}
+          </button>
+        </form>
+        <button className="demo-link" type="button" onClick={() => setUrl(demoUrl)}>
+          예시 링크로 먼저 둘러보기 <span>↗</span>
+        </button>
+        {error && <p className="error-message" role="alert">{error}</p>}
+      </section>
+
+      {!result && !loading && !error && (
+        <section className="empty-preview" aria-label="사용 방법">
+          <div className="preview-head"><span>HOW IT WORKS</span><span>3 STEPS</span></div>
+          <div className="steps">
+            <div><strong>01</strong><span>링크 붙여넣기</span><small>abr.ge 또는 PLAB 매치 주소</small></div>
+            <div><strong>02</strong><span>매치 정보 조회</span><small>안전하게 경기 데이터를 확인</small></div>
+            <div><strong>03</strong><span>신청자 확인</span><small>확정·취소 현황을 한 번에</small></div>
+          </div>
+        </section>
+      )}
+
+      {loading && <section className="loading-card"><span className="spinner dark" /> 매치 정보를 불러오는 중입니다<span className="loading-dots">...</span></section>}
+
+      {match && (
+        <section className="dashboard" aria-live="polite">
+          <div className="dashboard-head">
+            <div>
+              <p className="eyebrow">MATCH #{match.id}</p>
+              <h2>{match.label_title || match.label_stadium2 || "PLAB 매치"}</h2>
+              <p className="match-subtitle">{formatSchedule(match.schedule)} <span className="dot-separator">·</span> {match.label_stadium || match.label_stadium2 || "구장 정보 없음"}</p>
+            </div>
+            <a className="original-link" href={result.sourceUrl} target="_blank" rel="noreferrer">원본 매치 보기 ↗</a>
+          </div>
+
+          <div className="stats-grid">
+            <article className="stat-card stat-highlight">
+              <div className="stat-label">확정 인원 <span>CONFIRMED</span></div>
+              <div className="stat-value">{confirmed}<small> / {maxPlayers || "-"}</small></div>
+              <div className="progress"><span style={{ width: `${fillPercent}%` }} /></div>
+              <p>{maxPlayers && confirmed >= maxPlayers ? "정원이 가득 찼어요" : `최소 ${match.min_player_cnt ?? "-"}명 필요`}</p>
+            </article>
+            <article className="stat-card">
+              <div className="stat-label">전체 신청 <span>APPLICATIONS</span></div>
+              <div className="stat-value">{applications.length}<small>명</small></div>
+              <p>취소 {cancelled}명 포함</p>
+            </article>
+            <article className="stat-card">
+              <div className="stat-label">참가비 <span>FEE</span></div>
+              <div className="stat-value fee-value">{formatMoney(match.fee)}</div>
+              <p>{match.playtime ? `${match.playtime}시간 경기` : "경기 시간 정보 없음"}</p>
+            </article>
+            <article className="stat-card">
+              <div className="stat-label">매치 타입 <span>FORMAT</span></div>
+              <div className="stat-value type-value">{match.type === "3teams" ? "3팀제" : match.type || "-"}</div>
+              <p>{match.apply_status === "available" ? "신청 가능" : match.apply_status || "상태 확인 필요"}</p>
+            </article>
+          </div>
+
+          <div className="content-grid">
+            <div className="applications-panel">
+              <div className="panel-head">
+                <div><p className="eyebrow">ROSTER</p><h3>신청자 명단 <span>{applications.length}</span></h3></div>
+                <div className="filters" role="group" aria-label="신청자 필터">
+                  {[["ALL", "전체"], ["CONFIRM", "확정"], ["CANCEL", "취소"]].map(([value, label]) => (
+                    <button key={value} type="button" className={filter === value ? "active" : ""} onClick={() => setFilter(value)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              {filteredApplications.length ? (
+                <div className="application-list">
+                  {filteredApplications.map((apply, index) => (
+                    <article className="application-row" key={apply.id}>
+                      <div className="avatar">{String(index + 1).padStart(2, "0")}</div>
+                      <div className="applicant-main">
+                        <div className="applicant-name">{displayName(apply, index)} {apply.is_newbie && <span className="newbie">NEW</span>}</div>
+                        <div className="applicant-meta">{apply.profile_level?.tier_ko || apply.profile_level?.tier || "레벨 미등록"} <span>·</span> {apply.apply_type === "COUPON" ? "쿠폰" : apply.apply_type === "CASH" ? "현금" : apply.apply_type || "-"}</div>
+                      </div>
+                      <div className="playstyle"><span>{translate(apply.playstyle?.style)}</span><small>선호 · {translate(apply.playstyle?.strength)}</small></div>
+                      <div className="level-score"><strong>{apply.level ?? "-"}</strong><small>LEVEL</small></div>
+                      <span className={`status status-${(apply.status || "").toLowerCase()}`}>{statusLabels[apply.status || ""] || apply.status || "미정"}</span>
+                    </article>
+                  ))}
+                </div>
+              ) : <div className="no-results">해당 상태의 신청자가 없습니다.</div>}
+            </div>
+
+            <aside className="details-panel">
+              <div className="panel-head"><div><p className="eyebrow">AT A GLANCE</p><h3>매치 메모</h3></div><span className="live-badge">● LIVE</span></div>
+              <div className="detail-list">
+                <div><span>구장</span><strong>{match.label_stadium2 || match.label_stadium || "-"}</strong></div>
+                <div><span>주차</span><strong>{match.is_parking_free ? "무료 주차" : match.parking_fee || "정보 없음"}</strong></div>
+                <div><span>샤워실</span><strong>{match.is_shower ? "있음" : "없음"}</strong></div>
+                <div><span>풋살화</span><strong>{match.is_shoes ? "착용 가능" : "확인 필요"}</strong></div>
+              </div>
+              <div className="privacy-note"><span>i</span><p>표시 정보는 PLAB 매치 링크에서 제공되는 공개 응답을 바탕으로 합니다.</p></div>
+            </aside>
+          </div>
+          <p className="refresh-note">조회 시점 기준 · 최신 현황을 보려면 링크를 다시 조회하세요.</p>
+        </section>
+      )}
+      <footer>PLAB CHECK <span>개인용 매치 현황 도구</span></footer>
+    </main>
+  );
+}
