@@ -180,7 +180,7 @@ export default function Home() {
         <section className="empty-preview" aria-label="사용 방법">
           <div className="preview-head"><span>HOW IT WORKS</span><span>3 STEPS</span></div>
           <div className="steps">
-            <div><strong>01</strong><span>링크 붙여넣기</span><small>abr.ge 또는 PLAB 매치 주소</small></div>
+            <div><strong>01</strong><span>링크 붙여넣기</span><small>친구에게 공유하기 버튼으로 매치 링크를 복사해 붙여넣으세요.</small></div>
             <div><strong>02</strong><span>매치 정보 조회</span><small>안전하게 경기 데이터를 확인</small></div>
             <div><strong>03</strong><span>신청자 확인</span><small>확정·취소 현황을 한 번에</small></div>
           </div>
