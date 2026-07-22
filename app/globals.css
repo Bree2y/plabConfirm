@@ -98,6 +98,9 @@ h3 span { color: #9aae9f; font-size: 13px; font-weight: 650; }
 .application-row:last-child { border-bottom: 0; }
 .avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #edf3df; color: #78923e; font: 700 10px "SFMono-Regular", Consolas, monospace; }
 .applicant-name { font-size: 13px; font-weight: 750; }
+.applicant-gender { display: inline-block; margin-left: 4px; padding: 2px 5px; border-radius: 4px; background: #edf0ed; color: #7c8a82; font-size: 9px; font-weight: 750; vertical-align: 1px; }
+.applicant-gender.female { background: #f6e6ee; color: #a15a7b; }
+.applicant-gender.male { background: #e6eef6; color: #547a9b; }
 .newbie { margin-left: 5px; padding: 2px 4px; border-radius: 4px; background: #e6f1c9; color: #759a32; font-size: 8px; letter-spacing: .05em; vertical-align: 2px; }
 .applicant-meta, .playstyle small { margin-top: 5px; color: #98a49e; font-size: 10px; }
 .applicant-meta span { margin: 0 4px; color: #c6cec8; }

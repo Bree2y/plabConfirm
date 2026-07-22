@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Apply = {
   id: number;
+  user_sex?: number;
   depositor?: string | null;
   user?: number;
   user_id?: number;
@@ -128,6 +129,12 @@ function genderLabel(sex?: number) {
   if (sex === -1) return "여성";
   if (sex === 1) return "남성";
   return "누구나";
+}
+
+function genderClass(sex?: number) {
+  if (sex === -1) return "female";
+  if (sex === 1) return "male";
+  return "unknown";
 }
 
 export default function Home() {
@@ -362,7 +369,7 @@ export default function Home() {
                     <article className="application-row" key={apply.id}>
                       <div className="avatar">{String(index + 1).padStart(2, "0")}</div>
                       <div className="applicant-main">
-                        <div className="applicant-name">{displayName(apply, index)} {apply.is_newbie && <span className="newbie">NEW</span>}</div>
+                        <div className="applicant-name">{displayName(apply, index)} <span className={`applicant-gender ${genderClass(apply.user_sex)}`}>{genderLabel(apply.user_sex)}</span> {apply.is_newbie && <span className="newbie">NEW</span>}</div>
                         <div className="applicant-meta">{apply.profile_level?.tier_ko || apply.profile_level?.tier || "레벨 미등록"} <span>·</span> {apply.apply_type === "COUPON" ? "쿠폰" : apply.apply_type === "CASH" ? "현금" : apply.apply_type || "-"}</div>
                       </div>
                       <div className="playstyle"><span>{translate(apply.playstyle?.style)}</span><small>선호 · {translate(apply.playstyle?.strength)}</small></div>
