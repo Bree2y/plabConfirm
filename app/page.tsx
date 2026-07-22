@@ -442,7 +442,7 @@ export default function Home() {
                           <div className="avatar">{String(index + 1).padStart(2, "0")}</div>
                           <div className="applicant-main">
                             <div className="applicant-name">{displayName(apply, index)} <span className={`applicant-gender ${genderClass(apply.user_sex)}`}>{genderLabel(apply.user_sex)}</span> {apply.is_newbie && <span className="newbie">NEW</span>}</div>
-                            <div className="applicant-meta">{apply.profile_level?.tier_ko || apply.profile_level?.tier || "레벨 미등록"} <span>·</span> {apply.apply_type === "COUPON" ? "쿠폰" : apply.apply_type === "CASH" ? "현금" : apply.apply_type || "-"}</div>
+                            <div className="applicant-meta">{apply.profile_level?.tier_ko || apply.profile_level?.tier || "레벨 미등록"}</div>
                           </div>
                           <div className="playstyle"><span>{translate(apply.playstyle?.style)}</span><small>선호 · {translate(apply.playstyle?.strength)}</small></div>
                           <div className="level-score"><strong>{apply.level ?? "-"}</strong><small>LEVEL</small></div>
