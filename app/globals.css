@@ -133,6 +133,8 @@ h3 span { color: #9aae9f; font-size: 13px; font-weight: 650; }
 .match-list { display: grid; gap: 8px; }
 .match-card { display: grid; grid-template-columns: 88px minmax(180px, 1fr) 94px 86px auto; align-items: center; gap: 20px; padding: 18px 21px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.73); transition: transform .2s, box-shadow .2s; }
 .match-card:hover { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(32,49,43,.06); }
+.match-card:focus-visible { outline: 3px solid #b8d978; outline-offset: 2px; }
+.match-card.is-opening { opacity: .65; cursor: wait; }
 .match-card-time { display: flex; flex-direction: column; gap: 4px; }
 .match-card-time strong { font-size: 21px; letter-spacing: -.06em; }
 .match-card-time span, .match-card-stat span, .match-card-fee span { color: #94a099; font-size: 10px; }

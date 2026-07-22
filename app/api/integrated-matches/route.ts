@@ -32,18 +32,17 @@ export async function GET(request: Request) {
         const activeFemaleMembers = Array.isArray(detail.applys)
           ? detail.applys.filter((apply: { user_sex?: number; status?: string }) => apply.user_sex === -1 && apply.status !== "CANCEL")
           : [];
-        if (!activeFemaleMembers.length) return null;
         return {
           ...match,
           sex: detail.sex,
           female_member_count: activeFemaleMembers.length,
         };
       } catch {
-        return null;
+        return { ...match, female_member_count: 0 };
       }
     }));
 
-    return NextResponse.json({ ...payload, results: results.filter(Boolean) });
+    return NextResponse.json({ ...payload, results });
   } catch {
     return NextResponse.json({ error: "PLAB 매치 서버에 연결하지 못했습니다." }, { status: 502 });
   }
