@@ -42,10 +42,19 @@ export async function GET(request: Request) {
           });
           if (!detailResponse.ok) return { ...match, female_member_count: 0 };
           const detail = await detailResponse.json();
-          const activeFemaleMembers = Array.isArray(detail.applys)
-            ? detail.applys.filter((apply: { user_sex?: number; status?: string }) => apply.user_sex === -1 && apply.status !== "CANCEL")
+          const activeApplys = Array.isArray(detail.applys)
+            ? detail.applys.filter((apply: { status?: string }) => apply.status !== "CANCEL")
             : [];
-          return { ...match, sex: detail.sex, female_member_count: activeFemaleMembers.length };
+          const activeFemaleMembers = activeApplys.filter((apply: { user_sex?: number }) => apply.user_sex === -1);
+          const applicantUserIds = activeApplys
+            .map((apply: { user_id?: number; user?: number }) => apply.user_id ?? apply.user)
+            .filter((userId): userId is number => typeof userId === "number");
+          return {
+            ...match,
+            sex: detail.sex,
+            female_member_count: activeFemaleMembers.length,
+            applicant_user_ids: applicantUserIds,
+          };
         } catch {
           return { ...match, female_member_count: 0 };
         }

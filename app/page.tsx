@@ -62,6 +62,7 @@ type IntegratedMatch = Match & {
   status?: string;
   stadium_group_name?: string | null;
   female_member_count?: number;
+  applicant_user_ids?: number[];
 };
 
 type IntegratedResult = { results: IntegratedMatch[]; count: number; next?: string | null };
@@ -158,6 +159,7 @@ export default function Home() {
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [matchesError, setMatchesError] = useState("");
   const [openingMatchId, setOpeningMatchId] = useState<number | null>(null);
+  const [otherMatchesUserId, setOtherMatchesUserId] = useState<number | null>(null);
 
   useEffect(() => {
     if (view !== "matches" || regions.length) return;
@@ -237,6 +239,11 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function getOtherMatches(userId?: number) {
+    if (typeof userId !== "number") return [];
+    return integratedMatches.filter((item) => item.id !== match?.id && item.applicant_user_ids?.includes(userId));
   }
 
   const match = result?.match;
@@ -393,18 +400,54 @@ export default function Home() {
               </div>
               {filteredApplications.length ? (
                 <div className="application-list">
-                  {filteredApplications.map((apply, index) => (
-                    <article className="application-row" key={apply.id}>
-                      <div className="avatar">{String(index + 1).padStart(2, "0")}</div>
-                      <div className="applicant-main">
-                        <div className="applicant-name">{displayName(apply, index)} <span className={`applicant-gender ${genderClass(apply.user_sex)}`}>{genderLabel(apply.user_sex)}</span> {apply.is_newbie && <span className="newbie">NEW</span>}</div>
-                        <div className="applicant-meta">{apply.profile_level?.tier_ko || apply.profile_level?.tier || "레벨 미등록"} <span>·</span> {apply.apply_type === "COUPON" ? "쿠폰" : apply.apply_type === "CASH" ? "현금" : apply.apply_type || "-"}</div>
+                  {filteredApplications.map((apply, index) => {
+                    const userId = apply.user_id ?? apply.user;
+                    const isOtherMatchesOpen = otherMatchesUserId === userId;
+                    const otherMatches = getOtherMatches(userId);
+                    return (
+                      <div className="application-entry" key={apply.id}>
+                        <article className="application-row">
+                          <div className="avatar">{String(index + 1).padStart(2, "0")}</div>
+                          <div className="applicant-main">
+                            <div className="applicant-name">{displayName(apply, index)} <span className={`applicant-gender ${genderClass(apply.user_sex)}`}>{genderLabel(apply.user_sex)}</span> {apply.is_newbie && <span className="newbie">NEW</span>}</div>
+                            <div className="applicant-meta">{apply.profile_level?.tier_ko || apply.profile_level?.tier || "레벨 미등록"} <span>·</span> {apply.apply_type === "COUPON" ? "쿠폰" : apply.apply_type === "CASH" ? "현금" : apply.apply_type || "-"}</div>
+                          </div>
+                          <div className="playstyle"><span>{translate(apply.playstyle?.style)}</span><small>선호 · {translate(apply.playstyle?.strength)}</small></div>
+                          <div className="level-score"><strong>{apply.level ?? "-"}</strong><small>LEVEL</small></div>
+                          <span className={`status status-${(apply.status || "").toLowerCase()}`}>{statusLabels[apply.status || ""] || apply.status || "미정"}</span>
+                          <button
+                            type="button"
+                            className="other-matches-button"
+                            onClick={() => setOtherMatchesUserId(isOtherMatchesOpen ? null : userId ?? null)}
+                            disabled={typeof userId !== "number"}
+                          >
+                            다른 매치 보기
+                          </button>
+                        </article>
+                        {isOtherMatchesOpen && (
+                          <div className="other-matches-panel">
+                            <div>
+                              <strong>{displayName(apply, index)} 신청 매치</strong>
+                              <span>현재 조회한 날짜·지역 기준</span>
+                            </div>
+                            {otherMatches.length ? (
+                              <div className="other-matches-list">
+                                {otherMatches.map((otherMatch) => (
+                                  <button type="button" key={otherMatch.id} onClick={() => openMatch(otherMatch.id)}>
+                                    <span>{formatMatchTime(otherMatch.schedule)}</span>
+                                    <strong>{otherMatch.label_title || otherMatch.label_stadium2 || "PLAB 매치"}</strong>
+                                    <small>{otherMatch.confirm_cnt ?? 0} / {otherMatch.max_player_cnt ?? "-"} 신청</small>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p>{integratedMatches.length ? "현재 조회한 날짜·지역에서 신청한 다른 매치가 없습니다." : "매치 정보 메뉴에서 날짜와 지역을 먼저 조회하면 같은 조회 범위의 다른 매치를 확인할 수 있습니다."}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="playstyle"><span>{translate(apply.playstyle?.style)}</span><small>선호 · {translate(apply.playstyle?.strength)}</small></div>
-                      <div className="level-score"><strong>{apply.level ?? "-"}</strong><small>LEVEL</small></div>
-                      <span className={`status status-${(apply.status || "").toLowerCase()}`}>{statusLabels[apply.status || ""] || apply.status || "미정"}</span>
-                    </article>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : <div className="no-results">해당 상태의 신청자가 없습니다.</div>}
             </div>
