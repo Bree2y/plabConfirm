@@ -1,14 +1,24 @@
 import { NextResponse } from "next/server";
 
+const REGIONS = [
+  { id: 1, name: "서울" },
+  { id: 2, name: "경기" },
+  { id: 3, name: "인천" },
+  { id: 9, name: "강원" },
+  { id: 4, name: "대전/세종" },
+  { id: 10, name: "충남" },
+  { id: 11, name: "충북" },
+  { id: 5, name: "대구" },
+  { id: 12, name: "경북" },
+  { id: 6, name: "부산" },
+  { id: 13, name: "울산" },
+  { id: 14, name: "경남" },
+  { id: 7, name: "광주" },
+  { id: 15, name: "전남" },
+  { id: 16, name: "전북" },
+  { id: 8, name: "제주" },
+];
+
 export async function GET() {
-  try {
-    const response = await fetch("https://www.plabfootball.com/api/v2/regions/", {
-      headers: { accept: "application/json", "user-agent": "PLAB-Check/1.0" },
-      cache: "no-store",
-    });
-    if (!response.ok) return NextResponse.json({ error: "지역 정보를 불러오지 못했습니다." }, { status: 502 });
-    return NextResponse.json(await response.json());
-  } catch {
-    return NextResponse.json({ error: "PLAB 지역 서버에 연결하지 못했습니다." }, { status: 502 });
-  }
+  return NextResponse.json({ next: "", previous: "", count: REGIONS.length, results: REGIONS });
 }
