@@ -60,6 +60,7 @@ type IntegratedMatch = Match & {
   is_apply?: boolean;
   status?: string;
   stadium_group_name?: string | null;
+  female_member_count?: number;
 };
 
 type IntegratedResult = { results: IntegratedMatch[]; count: number; next?: string | null };
@@ -225,7 +226,7 @@ export default function Home() {
         </button>
         <div className="nav-tabs" role="tablist" aria-label="메뉴">
           <button type="button" className={view === "roster" ? "active" : ""} onClick={() => changeView("roster")} role="tab" aria-selected={view === "roster"}>신청자 현황</button>
-          <button type="button" className={view === "matches" ? "active" : ""} onClick={() => changeView("matches")} role="tab" aria-selected={view === "matches"}>여성 포함 매치 <span>♀</span></button>
+          <button type="button" className={view === "matches" ? "active" : ""} onClick={() => changeView("matches")} role="tab" aria-selected={view === "matches"}>여성 멤버 매치 <span>♀</span></button>
         </div>
         <span className="topbar-note"><i /> LIVE MATCH VIEWER</span>
       </nav>
@@ -236,8 +237,8 @@ export default function Home() {
           <h1>신청자 현황을<br /><em>한눈에</em> 확인하세요.</h1>
           <p className="hero-copy">PLAB 매치 링크 하나면 경기 정보와 신청자 명단을 깔끔하게 정리해드립니다.</p>
         </> : <>
-          <h1>지역과 날짜로<br /><em>여성 매치</em>를 찾아보세요.</h1>
-          <p className="hero-copy">지역과 날짜를 선택하면 여성 매치로 분류된 PLAB 경기만 모아 보여드립니다.</p>
+          <h1>지역과 날짜로<br /><em>여성 멤버가 있는 매치</em>를 찾아보세요.</h1>
+          <p className="hero-copy">각 매치의 상세 신청자 정보를 확인해 여성 멤버가 실제로 포함된 경기만 보여드립니다.</p>
         </>}
 
         {view === "roster" ? <form className="lookup" onSubmit={handleSubmit}>
@@ -293,20 +294,20 @@ export default function Home() {
       {view === "matches" && !matchesLoading && (
         <section className="match-explorer" aria-live="polite">
           <div className="explorer-head">
-            <div><p className="eyebrow">FEMALE MATCHES</p><h2>{selectedRegion ? regions.find((region) => String(region.id) === selectedRegion)?.name : "지역"} <span>·</span> {matchDate}</h2></div>
-            <div className="explorer-count"><strong>{integratedMatches.filter((item) => item.sex === -1).length}</strong><span>여성 매치</span></div>
+            <div><p className="eyebrow">FEMALE MEMBERS</p><h2>{selectedRegion ? regions.find((region) => String(region.id) === selectedRegion)?.name : "지역"} <span>·</span> {matchDate}</h2></div>
+            <div className="explorer-count"><strong>{integratedMatches.length}</strong><span>여성 멤버 포함</span></div>
           </div>
-          {integratedMatches.filter((item) => item.sex === -1).length ? <div className="match-list">
-            {integratedMatches.filter((item) => item.sex === -1).map((item) => (
+          {integratedMatches.length ? <div className="match-list">
+            {integratedMatches.map((item) => (
               <article className="match-card" key={item.id}>
                 <div className="match-card-time"><strong>{new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" }).format(new Date(item.schedule || ""))}</strong><span>{item.playtime ?? 2}시간</span></div>
-                <div className="match-card-main"><div className="match-card-title"><h3>{item.label_title || item.label_stadium2 || "PLAB 매치"}</h3><span className="gender-badge female">여성</span></div><p>{item.area_name || item.area_group_name || "지역 정보 없음"} <span>·</span> {item.display_level || "누구나"}</p></div>
-                <div className="match-card-stat"><strong>{item.confirm_cnt ?? 0}<small> / {item.max_player_cnt ?? "-"}</small></strong><span>확정 인원</span></div>
+                <div className="match-card-main"><div className="match-card-title"><h3>{item.label_title || item.label_stadium2 || "PLAB 매치"}</h3><span className="gender-badge female">여성 {item.female_member_count ?? 0}명</span></div><p>{item.area_name || item.area_group_name || "지역 정보 없음"} <span>·</span> {item.display_level || "누구나"}</p></div>
+                <div className="match-card-stat"><strong>{item.female_member_count ?? 0}<small>명</small></strong><span>여성 멤버</span></div>
                 <div className="match-card-fee"><strong>{formatMoney(item.fee)}</strong><span>{item.apply_status === "available" ? "신청 가능" : item.apply_status === "full" ? "마감" : "마감 임박"}</span></div>
                 <a className="match-card-link" href={`https://www.plabfootball.com/match/${item.id}/`} target="_blank" rel="noreferrer">매치 보기 ↗</a>
               </article>
             ))}
-          </div> : <div className="no-results match-empty"><strong>조건에 맞는 여성 매치가 없습니다.</strong><span>다른 날짜나 지역을 선택해보세요.</span></div>}
+          </div> : <div className="no-results match-empty"><strong>여성 멤버가 있는 매치가 없습니다.</strong><span>다른 날짜나 지역을 선택해보세요.</span></div>}
         </section>
       )}
 

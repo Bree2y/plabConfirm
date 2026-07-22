@@ -18,7 +18,32 @@ export async function GET(request: Request) {
       cache: "no-store",
     });
     if (!response.ok) return NextResponse.json({ error: "매치 정보를 불러오지 못했습니다." }, { status: 502 });
-    return NextResponse.json(await response.json());
+
+    const payload = await response.json();
+    const matches = Array.isArray(payload.results) ? payload.results : [];
+    const results = await Promise.all(matches.map(async (match: { id: number }) => {
+      try {
+        const detailResponse = await fetch(`https://www.plabfootball.com/api/v2/matches/${match.id}/`, {
+          headers: { accept: "application/json", "user-agent": "PLAB-Check/1.0" },
+          cache: "no-store",
+        });
+        if (!detailResponse.ok) return null;
+        const detail = await detailResponse.json();
+        const activeFemaleMembers = Array.isArray(detail.applys)
+          ? detail.applys.filter((apply: { user_sex?: number; status?: string }) => apply.user_sex === -1 && apply.status !== "CANCEL")
+          : [];
+        if (!activeFemaleMembers.length) return null;
+        return {
+          ...match,
+          sex: detail.sex,
+          female_member_count: activeFemaleMembers.length,
+        };
+      } catch {
+        return null;
+      }
+    }));
+
+    return NextResponse.json({ ...payload, results: results.filter(Boolean) });
   } catch {
     return NextResponse.json({ error: "PLAB 매치 서버에 연결하지 못했습니다." }, { status: 502 });
   }
