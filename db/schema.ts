@@ -23,3 +23,9 @@ export const communityComments = sqliteTable("community_comments", {
   passwordSalt: text("password_salt").notNull(),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const usageStats = sqliteTable("usage_stats", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});

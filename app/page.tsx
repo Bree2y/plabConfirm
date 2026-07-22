@@ -68,6 +68,7 @@ type IntegratedMatch = Match & {
 };
 
 type IntegratedResult = { results: IntegratedMatch[]; count: number; next?: string | null };
+type UsageStats = { today: number; total: number };
 
 const demoUrl = "https://abr.ge/vjss2z";
 
@@ -165,6 +166,7 @@ export default function Home() {
   const [otherMatches, setOtherMatches] = useState<IntegratedMatch[]>([]);
   const [otherMatchesLoading, setOtherMatchesLoading] = useState(false);
   const [otherMatchesError, setOtherMatchesError] = useState("");
+  const [usageStats, setUsageStats] = useState<UsageStats>({ today: 0, total: 0 });
 
   useEffect(() => {
     if (view !== "matches" || regions.length) return;
@@ -176,6 +178,23 @@ export default function Home() {
       })
       .catch((requestError) => setMatchesError(requestError instanceof Error ? requestError.message : "지역 정보를 불러오지 못했습니다."));
   }, [regions.length, view]);
+
+  useEffect(() => {
+    fetch("/api/stats", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json() as UsageStats;
+        setUsageStats({ today: data.today ?? 0, total: data.total ?? 0 });
+      })
+      .catch(() => undefined);
+  }, []);
+
+  function refreshUsageStats() {
+    fetch("/api/stats", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() as Promise<UsageStats> : null)
+      .then((data) => { if (data) setUsageStats({ today: data.today ?? 0, total: data.total ?? 0 }); })
+      .catch(() => undefined);
+  }
 
   async function loadIntegratedMatches(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
@@ -209,6 +228,7 @@ export default function Home() {
       if (!response.ok) throw new Error(data.error ?? "신청자 정보를 불러오지 못했습니다.");
       setUrl(matchUrl);
       setResult(data);
+      refreshUsageStats();
       setView("roster");
       setFilter("ALL");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -240,6 +260,7 @@ export default function Home() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "매치 정보를 불러오지 못했습니다.");
       setResult(data);
+      refreshUsageStats();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "잠시 후 다시 시도해주세요.");
     } finally {
@@ -352,6 +373,10 @@ export default function Home() {
           예시 링크로 먼저 둘러보기 <span>↗</span>
         </button>}
         {(error || matchesError) && <p className="error-message" role="alert">{error || matchesError}</p>}
+        <div className="usage-counter" aria-label="신청자 명단 조회 통계">
+          <div><strong>{usageStats.today.toLocaleString("ko-KR")}</strong><span>오늘 신청자 명단을 확인했어요</span></div>
+          <div><strong>{usageStats.total.toLocaleString("ko-KR")}</strong><span>누적 확인 횟수</span></div>
+        </div>
       </section>
 
       {view === "roster" && !result && !loading && !error && (

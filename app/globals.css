@@ -164,6 +164,10 @@ h3 span { color: #9aae9f; font-size: 13px; font-weight: 650; }
 .community-hero-note { display: flex; flex-direction: column; gap: 7px; width: fit-content; padding: 14px 17px; border: 1px solid #d8e5c6; border-radius: 12px; background: #f7faef; color: #6e8a3f; }
 .community-hero-note span { font-size: 12px; font-weight: 800; }
 .community-hero-note small { color: #879783; font-size: 11px; }
+.usage-counter { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.usage-counter > div { display: flex; align-items: baseline; gap: 7px; padding: 10px 13px; border: 1px solid #dfe8d5; border-radius: 9px; background: rgba(250,252,246,.8); }
+.usage-counter strong { color: #6d9631; font-size: 17px; letter-spacing: -.04em; }
+.usage-counter span { color: #84938a; font-size: 10px; }
 .community-shell { max-width: 1180px; margin: 0 auto; padding: 27px 0 30px; border-top: 1px solid var(--line); }
 .community-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 22px; }
 .community-toolbar h2 { font-size: clamp(25px, 3vw, 38px); }

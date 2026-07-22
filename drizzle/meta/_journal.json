@@ -15,6 +15,13 @@
       "when": 1784687918261,
       "tag": "0001_flaky_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784714082393,
+      "tag": "0002_empty_hammerhead",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordMatchLookup } from "../stats/route";
 
 const ALLOWED_HOSTS = new Set(["abr.ge", "www.abr.ge", "plabfootball.com", "www.plabfootball.com"]);
 
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
     const match = await apiResponse.json();
     if (!match || typeof match !== "object") return NextResponse.json({ error: "PLAB API 응답 형식이 올바르지 않습니다." }, { status: 502 });
     const applys = Array.isArray(match.applys) ? match.applys : [];
+    await recordMatchLookup();
     return NextResponse.json({ match, applys, sourceUrl: resolvedUrl });
   } catch {
     return NextResponse.json({ error: "PLAB 서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요." }, { status: 502 });
