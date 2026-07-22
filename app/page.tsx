@@ -161,6 +161,9 @@ export default function Home() {
   const [matchesError, setMatchesError] = useState("");
   const [openingMatchId, setOpeningMatchId] = useState<number | null>(null);
   const [otherMatchesUserId, setOtherMatchesUserId] = useState<number | null>(null);
+  const [otherMatches, setOtherMatches] = useState<IntegratedMatch[]>([]);
+  const [otherMatchesLoading, setOtherMatchesLoading] = useState(false);
+  const [otherMatchesError, setOtherMatchesError] = useState("");
 
   useEffect(() => {
     if (view !== "matches" || regions.length) return;
@@ -243,9 +246,33 @@ export default function Home() {
     }
   }
 
-  function getOtherMatches(userId?: number) {
-    if (typeof userId !== "number") return [];
-    return integratedMatches.filter((item) => item.id !== match?.id && item.applicant_user_ids?.includes(userId));
+  async function toggleOtherMatches(userId?: number) {
+    if (typeof userId !== "number") return;
+    if (otherMatchesUserId === userId && !otherMatchesLoading) {
+      setOtherMatchesUserId(null);
+      return;
+    }
+    if (!selectedRegion) {
+      setOtherMatchesUserId(userId);
+      setOtherMatches([]);
+      setOtherMatchesError("매치 정보 메뉴에서 지역을 선택한 뒤 조회하면 오늘부터 7일간의 다른 매치를 확인할 수 있습니다.");
+      return;
+    }
+    setOtherMatchesUserId(userId);
+    setOtherMatchesLoading(true);
+    setOtherMatchesError("");
+    try {
+      const params = new URLSearchParams({ userId: String(userId), region: selectedRegion, startDate: dateInputValue() });
+      const response = await fetch(`/api/applicant-matches?${params.toString()}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "다른 매치 정보를 불러오지 못했습니다.");
+      setOtherMatches((data.results ?? []).filter((item: IntegratedMatch) => item.id !== match?.id));
+    } catch (requestError) {
+      setOtherMatches([]);
+      setOtherMatchesError(requestError instanceof Error ? requestError.message : "다른 매치 정보를 불러오지 못했습니다.");
+    } finally {
+      setOtherMatchesLoading(false);
+    }
   }
 
   const match = result?.match;
@@ -409,7 +436,6 @@ export default function Home() {
                   {filteredApplications.map((apply, index) => {
                     const userId = apply.user_id ?? apply.user;
                     const isOtherMatchesOpen = otherMatchesUserId === userId;
-                    const otherMatches = getOtherMatches(userId);
                     return (
                       <div className="application-entry" key={apply.id}>
                         <article className="application-row">
@@ -424,7 +450,7 @@ export default function Home() {
                           <button
                             type="button"
                             className="other-matches-button"
-                            onClick={() => setOtherMatchesUserId(isOtherMatchesOpen ? null : userId ?? null)}
+                            onClick={() => { void toggleOtherMatches(userId); }}
                             disabled={typeof userId !== "number"}
                           >
                             다른 매치 보기
@@ -434,9 +460,9 @@ export default function Home() {
                           <div className="other-matches-panel">
                             <div>
                               <strong>{displayName(apply, index)} 신청 매치</strong>
-                              <span>현재 조회한 날짜·지역 기준</span>
+                              <span>오늘부터 7일간 · {selectedRegion ? "선택 지역" : "지역 미선택"}</span>
                             </div>
-                            {otherMatches.length ? (
+                            {otherMatchesLoading ? <p><span className="spinner dark" /> 다른 매치를 찾는 중입니다...</p> : otherMatchesError ? <p>{otherMatchesError}</p> : otherMatches.length ? (
                               <div className="other-matches-list">
                                 {otherMatches.map((otherMatch) => (
                                   <button type="button" key={otherMatch.id} onClick={() => openMatch(otherMatch.id)}>
