@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Apply = {
   id: number;
@@ -25,6 +25,7 @@ type Apply = {
 
 type Match = {
   id: number;
+  sex?: number;
   label_title?: string | null;
   label_stadium?: string | null;
   label_stadium2?: string | null;
@@ -47,6 +48,21 @@ type Match = {
 };
 
 type ApiResult = { match: Match; sourceUrl: string; applys: Apply[] };
+
+type Region = { id: number; name: string };
+
+type IntegratedMatch = Match & {
+  area_group_name?: string | null;
+  area_name?: string | null;
+  label_schedule9?: string | null;
+  display_level?: string | null;
+  waiting_cnt?: number;
+  is_apply?: boolean;
+  status?: string;
+  stadium_group_name?: string | null;
+};
+
+type IntegratedResult = { results: IntegratedMatch[]; count: number; next?: string | null };
 
 const demoUrl = "https://abr.ge/vjss2z";
 
@@ -96,12 +112,75 @@ function translate(value?: string | null) {
   return styleLabels[value] ?? value.toLowerCase().replaceAll("_", " ");
 }
 
+function dateInputValue() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+function genderLabel(sex?: number) {
+  if (sex === -1) return "여성";
+  if (sex === 1) return "남성";
+  return "누구나";
+}
+
 export default function Home() {
+  const [view, setView] = useState<"roster" | "matches">("roster");
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<ApiResult | null>(null);
   const [filter, setFilter] = useState("ALL");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const [matchDate, setMatchDate] = useState(dateInputValue);
+  const [integratedMatches, setIntegratedMatches] = useState<IntegratedMatch[]>([]);
+  const [matchesLoading, setMatchesLoading] = useState(false);
+  const [matchesError, setMatchesError] = useState("");
+
+  useEffect(() => {
+    if (view !== "matches" || regions.length) return;
+    fetch("/api/regions")
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "지역 정보를 불러오지 못했습니다.");
+        setRegions(data.results ?? []);
+      })
+      .catch((requestError) => setMatchesError(requestError instanceof Error ? requestError.message : "지역 정보를 불러오지 못했습니다."));
+  }, [regions.length, view]);
+
+  async function loadIntegratedMatches(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    if (!selectedRegion) {
+      setMatchesError("지역을 선택해주세요.");
+      return;
+    }
+    setMatchesLoading(true);
+    setMatchesError("");
+    try {
+      const params = new URLSearchParams({ date: matchDate, region: selectedRegion });
+      const response = await fetch(`/api/integrated-matches?${params.toString()}`);
+      const data: IntegratedResult & { error?: string } = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "매치 정보를 불러오지 못했습니다.");
+      setIntegratedMatches(data.results ?? []);
+    } catch (requestError) {
+      setMatchesError(requestError instanceof Error ? requestError.message : "매치 정보를 불러오지 못했습니다.");
+      setIntegratedMatches([]);
+    } finally {
+      setMatchesLoading(false);
+    }
+  }
+
+  function changeView(nextView: "roster" | "matches") {
+    setView(nextView);
+    setError("");
+    if (nextView === "matches") setResult(null);
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -140,19 +219,28 @@ export default function Home() {
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
       <nav className="topbar">
-        <a className="brand" href="/" aria-label="PLAB 인원 확인 홈">
+        <button className="brand brand-button" type="button" onClick={() => changeView("roster")} aria-label="PLAB 인원 확인 홈">
           <span className="brand-mark">P</span>
           <span>PLAB CHECK</span>
-        </a>
+        </button>
+        <div className="nav-tabs" role="tablist" aria-label="메뉴">
+          <button type="button" className={view === "roster" ? "active" : ""} onClick={() => changeView("roster")} role="tab" aria-selected={view === "roster"}>신청자 현황</button>
+          <button type="button" className={view === "matches" ? "active" : ""} onClick={() => changeView("matches")} role="tab" aria-selected={view === "matches"}>여성 포함 매치 <span>♀</span></button>
+        </div>
         <span className="topbar-note"><i /> LIVE MATCH VIEWER</span>
       </nav>
 
       <section className="hero">
-        <p className="eyebrow">MATCH INTELLIGENCE / 01</p>
-        <h1>신청자 현황을<br /><em>한눈에</em> 확인하세요.</h1>
-        <p className="hero-copy">PLAB 매치 링크 하나면 경기 정보와 신청자 명단을 깔끔하게 정리해드립니다.</p>
+        <p className="eyebrow">MATCH INTELLIGENCE / {view === "roster" ? "01" : "02"}</p>
+        {view === "roster" ? <>
+          <h1>신청자 현황을<br /><em>한눈에</em> 확인하세요.</h1>
+          <p className="hero-copy">PLAB 매치 링크 하나면 경기 정보와 신청자 명단을 깔끔하게 정리해드립니다.</p>
+        </> : <>
+          <h1>지역과 날짜로<br /><em>여성 매치</em>를 찾아보세요.</h1>
+          <p className="hero-copy">지역과 날짜를 선택하면 여성 매치로 분류된 PLAB 경기만 모아 보여드립니다.</p>
+        </>}
 
-        <form className="lookup" onSubmit={handleSubmit}>
+        {view === "roster" ? <form className="lookup" onSubmit={handleSubmit}>
           <div className="input-wrap">
             <span className="link-icon">↗</span>
             <label className="sr-only" htmlFor="match-link">PLAB 매치 링크</label>
@@ -169,14 +257,27 @@ export default function Home() {
             {loading ? <span className="spinner" /> : "현황 보기"}
             {!loading && <span>→</span>}
           </button>
-        </form>
-        <button className="demo-link" type="button" onClick={() => setUrl(demoUrl)}>
+        </form> : <form className="match-filters" onSubmit={loadIntegratedMatches}>
+          <div className="select-wrap">
+            <label htmlFor="match-date">날짜</label>
+            <input id="match-date" type="date" value={matchDate} onChange={(event) => setMatchDate(event.target.value)} />
+          </div>
+          <div className="select-wrap region-select">
+            <label htmlFor="match-region">지역</label>
+            <select id="match-region" value={selectedRegion} onChange={(event) => setSelectedRegion(event.target.value)}>
+              <option value="">지역 선택</option>
+              {regions.map((region) => <option value={region.id} key={region.id}>{region.name}</option>)}
+            </select>
+          </div>
+          <button type="submit" disabled={matchesLoading}>{matchesLoading ? <span className="spinner" /> : "매치 찾기"}<span>→</span></button>
+        </form>}
+        {view === "roster" && <button className="demo-link" type="button" onClick={() => setUrl(demoUrl)}>
           예시 링크로 먼저 둘러보기 <span>↗</span>
-        </button>
-        {error && <p className="error-message" role="alert">{error}</p>}
+        </button>}
+        {(error || matchesError) && <p className="error-message" role="alert">{error || matchesError}</p>}
       </section>
 
-      {!result && !loading && !error && (
+      {view === "roster" && !result && !loading && !error && (
         <section className="empty-preview" aria-label="사용 방법">
           <div className="preview-head"><span>HOW IT WORKS</span><span>3 STEPS</span></div>
           <div className="steps">
@@ -187,14 +288,34 @@ export default function Home() {
         </section>
       )}
 
-      {loading && <section className="loading-card"><span className="spinner dark" /> 매치 정보를 불러오는 중입니다<span className="loading-dots">...</span></section>}
+      {(loading || matchesLoading) && <section className="loading-card"><span className="spinner dark" /> {matchesLoading ? "여성 매치를 불러오는 중입니다" : "매치 정보를 불러오는 중입니다"}<span className="loading-dots">...</span></section>}
 
-      {match && (
+      {view === "matches" && !matchesLoading && (
+        <section className="match-explorer" aria-live="polite">
+          <div className="explorer-head">
+            <div><p className="eyebrow">FEMALE MATCHES</p><h2>{selectedRegion ? regions.find((region) => String(region.id) === selectedRegion)?.name : "지역"} <span>·</span> {matchDate}</h2></div>
+            <div className="explorer-count"><strong>{integratedMatches.filter((item) => item.sex === -1).length}</strong><span>여성 매치</span></div>
+          </div>
+          {integratedMatches.filter((item) => item.sex === -1).length ? <div className="match-list">
+            {integratedMatches.filter((item) => item.sex === -1).map((item) => (
+              <article className="match-card" key={item.id}>
+                <div className="match-card-time"><strong>{new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" }).format(new Date(item.schedule || ""))}</strong><span>{item.playtime ?? 2}시간</span></div>
+                <div className="match-card-main"><div className="match-card-title"><h3>{item.label_title || item.label_stadium2 || "PLAB 매치"}</h3><span className="gender-badge female">여성</span></div><p>{item.area_name || item.area_group_name || "지역 정보 없음"} <span>·</span> {item.display_level || "누구나"}</p></div>
+                <div className="match-card-stat"><strong>{item.confirm_cnt ?? 0}<small> / {item.max_player_cnt ?? "-"}</small></strong><span>확정 인원</span></div>
+                <div className="match-card-fee"><strong>{formatMoney(item.fee)}</strong><span>{item.apply_status === "available" ? "신청 가능" : item.apply_status === "full" ? "마감" : "마감 임박"}</span></div>
+                <a className="match-card-link" href={`https://www.plabfootball.com/match/${item.id}/`} target="_blank" rel="noreferrer">매치 보기 ↗</a>
+              </article>
+            ))}
+          </div> : <div className="no-results match-empty"><strong>조건에 맞는 여성 매치가 없습니다.</strong><span>다른 날짜나 지역을 선택해보세요.</span></div>}
+        </section>
+      )}
+
+      {view === "roster" && match && (
         <section className="dashboard" aria-live="polite">
           <div className="dashboard-head">
             <div>
               <p className="eyebrow">MATCH #{match.id}</p>
-              <h2>{match.label_title || match.label_stadium2 || "PLAB 매치"}</h2>
+              <div className="match-title-line"><h2>{match.label_title || match.label_stadium2 || "PLAB 매치"}</h2><span className={`gender-badge ${match.sex === -1 ? "female" : ""}`}>{genderLabel(match.sex)}</span></div>
               <p className="match-subtitle">{formatSchedule(match.schedule)} <span className="dot-separator">·</span> {match.label_stadium || match.label_stadium2 || "구장 정보 없음"}</p>
             </div>
             <a className="original-link" href={result.sourceUrl} target="_blank" rel="noreferrer">원본 매치 보기 ↗</a>
