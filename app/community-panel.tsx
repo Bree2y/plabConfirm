@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COMMUNITY_CATEGORIES, COMMUNITY_REGIONS } from "./community-data";
 
 type Category = { id: string; label: string; description: string };
@@ -34,6 +34,8 @@ export default function CommunityPanel() {
   const [notice, setNotice] = useState("");
   const [postForm, setPostForm] = useState({ category: "players", region: "all", title: "", content: "", nickname: "", password: "" });
   const [commentForm, setCommentForm] = useState({ content: "", nickname: "", password: "" });
+  const communityFormRef = useRef<HTMLFormElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const activeCategory = useMemo(() => categoryMap.get(selectedCategory), [selectedCategory]);
 
@@ -56,6 +58,15 @@ export default function CommunityPanel() {
     const timer = window.setTimeout(() => { void loadPosts(); }, 0);
     return () => window.clearTimeout(timer);
   }, [loadPosts]);
+
+  useEffect(() => {
+    if (mode !== "write") return;
+    const frame = window.requestAnimationFrame(() => {
+      communityFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      titleInputRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [mode]);
 
   async function openPost(postId: number) {
     setDetailLoading(true);
@@ -130,6 +141,12 @@ export default function CommunityPanel() {
     setMode("list");
   }
 
+  function openWriteForm() {
+    setMode("write");
+    setSelectedPost(null);
+    setPostForm({ ...postForm, category: selectedCategory === "all" ? "players" : selectedCategory, region: selectedRegion });
+  }
+
   return (
     <section className="community-shell" aria-live="polite">
       <div className="community-toolbar">
@@ -138,7 +155,7 @@ export default function CommunityPanel() {
           <h2>{activeCategory?.label ?? "풋살 커뮤니티"}</h2>
           <p>{activeCategory?.description ?? "같이 찰 사람을 찾고 풋살 이야기를 나눠보세요."}</p>
         </div>
-        <button type="button" className="community-write-button" onClick={() => { setMode("write"); setSelectedPost(null); setPostForm({ ...postForm, category: selectedCategory === "all" ? "players" : selectedCategory, region: selectedRegion }); }}>글쓰기 <span>＋</span></button>
+        <button type="button" className="community-write-button" onClick={openWriteForm}>글쓰기 <span>＋</span></button>
       </div>
 
       <div className="community-layout">
@@ -155,11 +172,11 @@ export default function CommunityPanel() {
           {notice && <p className="community-notice">{notice}</p>}
           {error && <p className="error-message" role="alert">{error}</p>}
           {mode === "write" ? (
-            <form className="community-form" onSubmit={submitPost}>
+            <form className="community-form" ref={communityFormRef} onSubmit={submitPost}>
               <div className="community-form-head"><div><p className="eyebrow">NEW POST</p><h3>새 글 작성</h3></div><button type="button" className="text-button" onClick={() => setMode("list")}>목록으로</button></div>
               <label>카테고리<select value={postForm.category} onChange={(event) => setPostForm({ ...postForm, category: event.target.value })}>{categories.map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>
               <label><span className="form-field-label">지역 {regionRequiredCategories.has(postForm.category) && <em className="required-label">필수</em>}</span><select value={postForm.region} onChange={(event) => setPostForm({ ...postForm, region: event.target.value })}>{regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}</select></label>
-              <label>제목<input value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value })} maxLength={80} placeholder="어떤 이야기를 나누고 싶나요?" required /></label>
+              <label>제목<input ref={titleInputRef} value={postForm.title} onChange={(event) => setPostForm({ ...postForm, title: event.target.value })} maxLength={80} placeholder="어떤 이야기를 나누고 싶나요?" required /></label>
               <label>내용<textarea value={postForm.content} onChange={(event) => setPostForm({ ...postForm, content: event.target.value })} maxLength={5000} placeholder="모집 지역, 시간, 매치 정보 등을 자세히 적어주세요." required /></label>
               <div className="community-identity-fields"><label>닉네임<input value={postForm.nickname} onChange={(event) => setPostForm({ ...postForm, nickname: event.target.value })} maxLength={20} placeholder="2~20자" required /></label><label>비밀번호<input type="password" value={postForm.password} onChange={(event) => setPostForm({ ...postForm, password: event.target.value })} maxLength={100} placeholder="4자 이상" required /></label></div>
               <p className="form-help">비밀번호는 글 작성 확인에만 사용되며 원문으로 저장하지 않습니다.</p>
@@ -177,7 +194,7 @@ export default function CommunityPanel() {
           ) : (
             <>
               <div className="community-list-head"><strong>{regionMap.get(selectedRegion)?.name ?? "전국"} · {selectedCategory === "all" ? "전체 게시글" : activeCategory?.label}</strong><span>{loading ? "불러오는 중..." : `${posts.length}개`}</span></div>
-              {detailLoading || loading ? <div className="community-empty"><span className="spinner dark" /> 게시글을 불러오는 중입니다...</div> : posts.length ? <div className="community-post-list">{posts.map((post) => <button type="button" className="community-post-card" key={post.id} onClick={() => openPost(post.id)}><div className="community-post-card-top"><span><span className="community-category-label">{categoryMap.get(post.category)?.label ?? post.category}</span><span className="community-region-label">{regionMap.get(post.region)?.name ?? "전국"}</span></span><span>{formatDate(post.createdAt)}</span></div><h3>{post.title}</h3><p>{post.content}</p><div><span>{post.nickname}</span><span>댓글 {post.commentCount}</span></div></button>)}</div> : <div className="community-empty"><strong>아직 게시글이 없습니다.</strong><span>첫 글을 작성해 풋살 이야기를 시작해보세요.</span><button type="button" onClick={() => setMode("write")}>첫 글 작성하기</button></div>}
+              {detailLoading || loading ? <div className="community-empty"><span className="spinner dark" /> 게시글을 불러오는 중입니다...</div> : posts.length ? <div className="community-post-list">{posts.map((post) => <button type="button" className="community-post-card" key={post.id} onClick={() => openPost(post.id)}><div className="community-post-card-top"><span><span className="community-category-label">{categoryMap.get(post.category)?.label ?? post.category}</span><span className="community-region-label">{regionMap.get(post.region)?.name ?? "전국"}</span></span><span>{formatDate(post.createdAt)}</span></div><h3>{post.title}</h3><p>{post.content}</p><div><span>{post.nickname}</span><span>댓글 {post.commentCount}</span></div></button>)}</div> : <div className="community-empty"><strong>아직 게시글이 없습니다.</strong><span>첫 글을 작성해 풋살 이야기를 시작해보세요.</span><button type="button" onClick={openWriteForm}>첫 글 작성하기</button></div>}
             </>
           )}
         </div>

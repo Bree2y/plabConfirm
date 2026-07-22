@@ -205,7 +205,7 @@ h3 span { color: #9aae9f; font-size: 13px; font-weight: 650; }
 .text-button { padding: 4px 0; border: 0; background: transparent; color: #73847a; font-size: 11px; font-weight: 750; }
 .text-button:hover { color: #5c8730; }
 .text-button.danger { color: #b77c70; }
-.community-form { display: flex; flex-direction: column; gap: 14px; }
+.community-form { display: flex; flex-direction: column; gap: 14px; scroll-margin-top: 22px; }
 .community-form > label, .community-identity-fields label { display: flex; flex-direction: column; gap: 7px; color: #687970; font-size: 11px; font-weight: 750; }
 .form-field-label { display: block; }
 .required-label { margin-left: 5px; color: #9e6f65; font-size: 9px; font-style: normal; font-weight: 650; }
