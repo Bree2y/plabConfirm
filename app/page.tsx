@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import CommunityPanel from "./community-panel";
 
 type Apply = {
   id: number;
@@ -146,7 +147,7 @@ function genderClass(sex?: number) {
 }
 
 export default function Home() {
-  const [view, setView] = useState<"roster" | "matches">("roster");
+  const [view, setView] = useState<"roster" | "matches" | "community">("roster");
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<ApiResult | null>(null);
   const [filter, setFilter] = useState("ALL");
@@ -214,10 +215,11 @@ export default function Home() {
     }
   }
 
-  function changeView(nextView: "roster" | "matches") {
+  function changeView(nextView: "roster" | "matches" | "community") {
     setView(nextView);
     setError("");
-    if (nextView === "matches") setResult(null);
+    setMatchesError("");
+    if (nextView !== "roster") setResult(null);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -247,7 +249,7 @@ export default function Home() {
   }
 
   const match = result?.match;
-  const applications = result?.applys ?? [];
+  const applications = useMemo(() => result?.applys ?? [], [result?.applys]);
   const filteredApplications = useMemo(
     () => (filter === "ALL" ? applications : applications.filter((apply) => apply.status === filter)),
     [applications, filter],
@@ -269,18 +271,22 @@ export default function Home() {
         <div className="nav-tabs" role="tablist" aria-label="메뉴">
           <button type="button" className={view === "roster" ? "active" : ""} onClick={() => changeView("roster")} role="tab" aria-selected={view === "roster"}>신청자 현황</button>
           <button type="button" className={view === "matches" ? "active" : ""} onClick={() => changeView("matches")} role="tab" aria-selected={view === "matches"}>매치 정보</button>
+          <button type="button" className={view === "community" ? "active" : ""} onClick={() => changeView("community")} role="tab" aria-selected={view === "community"}>커뮤니티</button>
         </div>
         <span className="topbar-note"><i /> LIVE MATCH VIEWER</span>
       </nav>
 
       <section className="hero">
-        <p className="eyebrow">MATCH INTELLIGENCE / {view === "roster" ? "01" : "02"}</p>
+        <p className="eyebrow">{view === "community" ? "PLAB COMMUNITY" : "MATCH INTELLIGENCE"} / {view === "roster" ? "01" : view === "matches" ? "02" : "03"}</p>
         {view === "roster" ? <>
           <h1>신청자 현황을<br /><em>한눈에</em> 확인하세요.</h1>
           <p className="hero-copy">PLAB 매치 링크 하나면 경기 정보와 신청자 명단을 깔끔하게 정리해드립니다.</p>
-        </> : <>
+        </> : view === "matches" ? <>
           <h1>지역과 날짜로<br /><em>매치 정보</em>를 찾아보세요.</h1>
           <p className="hero-copy">원하는 날짜와 지역의 모든 매치를 확인하고, 매치를 클릭해 신청자 현황을 살펴보세요.</p>
+        </> : <>
+          <h1>풋살 이야기를<br /><em>함께 나눠보세요.</em></h1>
+          <p className="hero-copy">같이 찰 사람을 찾고, 매치 후기와 구장 정보, 풋살에 대한 이야기를 자유롭게 나눌 수 있어요.</p>
         </>}
 
         {view === "roster" ? <form className="lookup" onSubmit={handleSubmit}>
@@ -300,7 +306,7 @@ export default function Home() {
             {loading ? <span className="spinner" /> : "현황 보기"}
             {!loading && <span>→</span>}
           </button>
-        </form> : <form className="match-filters" onSubmit={loadIntegratedMatches}>
+        </form> : view === "matches" ? <form className="match-filters" onSubmit={loadIntegratedMatches}>
           <div className="select-wrap">
             <label htmlFor="match-date">날짜</label>
             <input id="match-date" type="date" value={matchDate} onChange={(event) => setMatchDate(event.target.value)} />
@@ -313,7 +319,7 @@ export default function Home() {
             </select>
           </div>
           <button type="submit" disabled={matchesLoading}>{matchesLoading ? <span className="spinner" /> : "매치 찾기"}<span>→</span></button>
-        </form>}
+        </form> : <div className="community-hero-note"><span>닉네임 + 비밀번호</span><small>로그인 없이 글과 댓글을 남길 수 있습니다.</small></div>}
         {view === "roster" && <button className="demo-link" type="button" onClick={() => setUrl(demoUrl)}>
           예시 링크로 먼저 둘러보기 <span>↗</span>
         </button>}
@@ -466,6 +472,7 @@ export default function Home() {
           <p className="refresh-note">조회 시점 기준 · 최신 현황을 보려면 링크를 다시 조회하세요.</p>
         </section>
       )}
+      {view === "community" && <CommunityPanel />}
       <footer>PLAB CHECK <span>개인용 매치 현황 도구</span></footer>
     </main>
   );
