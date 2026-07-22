@@ -103,6 +103,13 @@ function formatMoney(value?: number) {
   return typeof value === "number" ? `${value.toLocaleString("ko-KR")}원` : "-";
 }
 
+function formatMatchTime(value?: string | null) {
+  if (!value) return "--:--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--:--";
+  return new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" }).format(date);
+}
+
 function displayName(apply: Apply, index: number) {
   const name = apply.depositor?.trim();
   if (name && !name.includes("?") && !name.includes("�")) return name;
@@ -254,7 +261,7 @@ export default function Home() {
         </button>
         <div className="nav-tabs" role="tablist" aria-label="메뉴">
           <button type="button" className={view === "roster" ? "active" : ""} onClick={() => changeView("roster")} role="tab" aria-selected={view === "roster"}>신청자 현황</button>
-          <button type="button" className={view === "matches" ? "active" : ""} onClick={() => changeView("matches")} role="tab" aria-selected={view === "matches"}>매치 정보 <span>⌕</span></button>
+          <button type="button" className={view === "matches" ? "active" : ""} onClick={() => changeView("matches")} role="tab" aria-selected={view === "matches"}>매치 정보</button>
         </div>
         <span className="topbar-note"><i /> LIVE MATCH VIEWER</span>
       </nav>
@@ -328,7 +335,7 @@ export default function Home() {
           {integratedMatches.length ? <div className="match-list">
             {integratedMatches.map((item) => (
               <article className={`match-card ${openingMatchId === item.id ? "is-opening" : ""}`} key={item.id} role="button" tabIndex={0} onClick={() => openMatch(item.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openMatch(item.id); } }}>
-                <div className="match-card-time"><strong>{new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Seoul" }).format(new Date(item.schedule || ""))}</strong><span>{item.playtime ?? 2}시간</span></div>
+                <div className="match-card-time"><strong>{formatMatchTime(item.schedule)}</strong><span>{item.playtime ?? 2}시간</span></div>
                 <div className="match-card-main"><div className="match-card-title"><h3>{item.label_title || item.label_stadium2 || "PLAB 매치"}</h3>{(item.female_member_count ?? 0) > 0 && <span className="gender-badge female">여성 {item.female_member_count}명</span>}</div><p>{item.area_name || item.area_group_name || "지역 정보 없음"} <span>·</span> {item.display_level || "누구나"}</p></div>
                 <div className="match-card-stat"><strong>{item.confirm_cnt ?? 0}<small> / {item.max_player_cnt ?? "-"}</small></strong><span>확정 인원</span></div>
                 <div className="match-card-fee"><strong>{formatMoney(item.fee)}</strong><span>{item.apply_status === "available" ? "신청 가능" : item.apply_status === "full" ? "마감" : "마감 임박"}</span></div>
