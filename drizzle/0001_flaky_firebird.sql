@@ -1,0 +1,1 @@
+ALTER TABLE `community_posts` ADD `region` text DEFAULT 'all' NOT NULL;

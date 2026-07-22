@@ -1,19 +1,23 @@
 import { sql } from "drizzle-orm";
+import { COMMUNITY_CATEGORIES, COMMUNITY_REGIONS } from "../../community-data";
 
-export const COMMUNITY_CATEGORIES = [
-  { id: "players", label: "같이 풋살할 사람", description: "지역·시간이 맞는 사람을 찾아요" },
-  { id: "recruit", label: "팀원·용병 모집", description: "팀원, 용병, 대체 인원을 구해요" },
-  { id: "review", label: "매치 후기·정보", description: "매치와 구장 경험을 공유해요" },
-  { id: "manners", label: "비매너 유저 제보", description: "사실 중심으로 운영에 도움을 줘요" },
-  { id: "manager", label: "매니저·구장 정보", description: "매니저와 구장 정보를 나눠요" },
-  { id: "question", label: "질문·건의", description: "PLAB 사용법과 개선 의견" },
-  { id: "free", label: "자유게시판", description: "풋살 이야기를 자유롭게 나눠요" },
-] as const;
+export { COMMUNITY_CATEGORIES, COMMUNITY_REGIONS };
 
 export type CommunityCategory = (typeof COMMUNITY_CATEGORIES)[number]["id"];
+export type CommunityRegion = (typeof COMMUNITY_REGIONS)[number]["id"];
+
+const REGION_REQUIRED_CATEGORIES = new Set(["players", "recruit", "review", "manners", "manager"]);
 
 export function isCommunityCategory(value: string): value is CommunityCategory {
   return COMMUNITY_CATEGORIES.some((category) => category.id === value);
+}
+
+export function isCommunityRegion(value: string): value is CommunityRegion {
+  return COMMUNITY_REGIONS.some((region) => region.id === value);
+}
+
+export function requiresCommunityRegion(category: CommunityCategory) {
+  return REGION_REQUIRED_CATEGORIES.has(category);
 }
 
 export function jsonError(message: string, status = 400) {

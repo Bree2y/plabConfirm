@@ -178,6 +178,7 @@ h3 span { color: #9aae9f; font-size: 13px; font-weight: 650; }
 .community-categories > button { padding: 10px 9px; border: 0; border-radius: 8px; background: transparent; color: #78877e; font-size: 11px; font-weight: 650; text-align: left; }
 .community-categories > button:hover { background: #f0f5e9; color: var(--ink); }
 .community-categories > button.active { background: #edf5dc; color: #648b2e; font-weight: 800; }
+.community-region-heading { margin-top: 12px; padding-top: 15px !important; border-top: 1px solid #edf0ed; }
 .community-guideline { display: flex; gap: 8px; margin: 16px 4px 2px; padding: 11px; border-radius: 9px; background: #f5f7f1; }
 .community-guideline > span { display: grid; place-items: center; flex: 0 0 auto; width: 16px; height: 16px; border: 1px solid #a9bd8a; border-radius: 50%; color: #77964a; font: 700 10px Georgia; }
 .community-guideline p { margin: 0; color: #89958d; font-size: 9px; line-height: 1.55; }
@@ -192,6 +193,7 @@ h3 span { color: #9aae9f; font-size: 13px; font-weight: 650; }
 .community-post-card-top { display: flex; justify-content: space-between; gap: 10px; }
 .community-post-card-top > span:last-child { color: #99a69e; font-size: 10px; }
 .community-category-label { display: inline-flex; padding: 4px 7px; border-radius: 5px; background: #f0f5e8; color: #739145; font-size: 9px; font-weight: 800; }
+.community-region-label { display: inline-flex; margin-left: 5px; padding: 3px 6px; border-radius: 5px; background: #eef2f5; color: #718291; font-size: 9px; font-weight: 750; vertical-align: 1px; }
 .community-post-card h3 { margin: 10px 0 6px; font-size: 15px; transition: color .2s; }
 .community-post-card p { overflow: hidden; margin: 0; color: #829088; font-size: 11px; line-height: 1.6; text-overflow: ellipsis; white-space: nowrap; }
 .community-post-card > div:last-child { display: flex; gap: 12px; margin-top: 11px; color: #a0aba5; font-size: 10px; }
@@ -205,6 +207,8 @@ h3 span { color: #9aae9f; font-size: 13px; font-weight: 650; }
 .text-button.danger { color: #b77c70; }
 .community-form { display: flex; flex-direction: column; gap: 14px; }
 .community-form > label, .community-identity-fields label { display: flex; flex-direction: column; gap: 7px; color: #687970; font-size: 11px; font-weight: 750; }
+.form-field-label { display: block; }
+.required-label { margin-left: 5px; color: #9e6f65; font-size: 9px; font-style: normal; font-weight: 650; }
 .community-form input, .community-form select, .community-form textarea, .comment-form input, .comment-form textarea { width: 100%; border: 1px solid #d6e0d7; border-radius: 8px; outline: 0; background: #fbfcfa; color: var(--ink); font-size: 12px; }
 .community-form input, .community-form select, .comment-form input { height: 42px; padding: 0 12px; }
 .community-form textarea { min-height: 190px; padding: 12px; resize: vertical; line-height: 1.7; }

@@ -4,6 +4,7 @@ import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 export const communityPosts = sqliteTable("community_posts", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   category: text("category").notNull(),
+  region: text("region").notNull().default("all"),
   title: text("title").notNull(),
   content: text("content").notNull(),
   nickname: text("nickname").notNull(),

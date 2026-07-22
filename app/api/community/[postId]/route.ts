@@ -11,6 +11,7 @@ export async function GET(_request: Request, context: { params: Promise<{ postId
     const [post] = await db.select({
       id: communityPosts.id,
       category: communityPosts.category,
+      region: communityPosts.region,
       title: communityPosts.title,
       content: communityPosts.content,
       nickname: communityPosts.nickname,
