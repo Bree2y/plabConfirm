@@ -324,7 +324,7 @@ export default function Home() {
         </section>
       )}
 
-      {(loading || matchesLoading) && <section className="loading-card"><span className="spinner dark" /> {matchesLoading ? "여성 매치를 불러오는 중입니다" : "매치 정보를 불러오는 중입니다"}<span className="loading-dots">...</span></section>}
+      {(loading || matchesLoading) && <section className="loading-card"><span className="spinner dark" /> 매치 정보를 불러오는 중입니다<span className="loading-dots">...</span></section>}
 
       {view === "matches" && !matchesLoading && (
         <section className="match-explorer" aria-live="polite">
@@ -337,7 +337,7 @@ export default function Home() {
               <article className={`match-card ${openingMatchId === item.id ? "is-opening" : ""}`} key={item.id} role="button" tabIndex={0} onClick={() => openMatch(item.id)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openMatch(item.id); } }}>
                 <div className="match-card-time"><strong>{formatMatchTime(item.schedule)}</strong><span>{item.playtime ?? 2}시간</span></div>
                 <div className="match-card-main"><div className="match-card-title"><h3>{item.label_title || item.label_stadium2 || "PLAB 매치"}</h3>{(item.female_member_count ?? 0) > 0 && <span className="gender-badge female">여성 {item.female_member_count}명</span>}</div><p>{item.area_name || item.area_group_name || "지역 정보 없음"} <span>·</span> {item.display_level || "누구나"}</p></div>
-                <div className="match-card-stat"><strong>{item.confirm_cnt ?? 0}<small> / {item.max_player_cnt ?? "-"}</small></strong><span>확정 인원</span></div>
+                <div className="match-card-stat"><strong>{item.confirm_cnt ?? 0}<small> / {item.max_player_cnt ?? "-"}</small></strong><span>신청 인원</span></div>
                 <div className="match-card-fee"><strong>{formatMoney(item.fee)}</strong><span>{item.apply_status === "available" ? "신청 가능" : item.apply_status === "full" ? "마감" : "마감 임박"}</span></div>
                 <span className="match-card-link">신청자 현황 보기 →</span>
               </article>
