@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import CommunityPanel from "./community-panel";
 
 type Apply = {
@@ -499,7 +500,7 @@ export default function Home() {
         </section>
       )}
       {view === "community" && <CommunityPanel />}
-      <footer>PLAB CHECK <span>개인용 매치 현황 도구</span></footer>
+      <footer>PLAB CHECK <span>개인용 매치 현황 도구</span><nav className="footer-links"><Link href="/community">커뮤니티</Link><Link href="/community/rules">운영정책</Link><Link href="/privacy">개인정보처리방침</Link><Link href="/terms">이용약관</Link><Link href="/contact">문의</Link></nav></footer>
     </main>
   );
 }
